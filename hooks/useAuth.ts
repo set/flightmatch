@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '@/lib/firebase';
 import { User } from '@/types';
 
 export const useAuth = () => {
@@ -32,18 +33,26 @@ export const useAuth = () => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signUp = async (email: string, password: string, userData: Partial<User>) => {
+  const signUp = async (email: string, password: string, userData: Partial<User> & { photoFile?: File }) => {
     const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-    
+
+    let photoURL = '';
+    if (userData.photoFile) {
+      const photoRef = ref(storage, `profile_photos/${firebaseUser.uid}`);
+      await uploadBytes(photoRef, userData.photoFile);
+      photoURL = await getDownloadURL(photoRef);
+    }
+
     await updateProfile(firebaseUser, {
-      displayName: userData.displayName
+      displayName: userData.displayName,
+      photoURL: photoURL || undefined
     });
 
     const newUser: User = {
       id: firebaseUser.uid,
       email: firebaseUser.email!,
       displayName: userData.displayName!,
-      photoURL: userData.photoURL,
+      photoURL: photoURL || '',
       age: userData.age!,
       bio: userData.bio!,
       fightStyle: userData.fightStyle!,
@@ -59,7 +68,6 @@ export const useAuth = () => {
 
     await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
     setUser(newUser);
-    
     return firebaseUser;
   };
 

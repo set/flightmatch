@@ -23,6 +23,7 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
     height: '',
     location: ''
   });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +42,8 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           experience: formData.experience,
           weight: parseInt(formData.weight),
           height: parseInt(formData.height),
-          location: formData.location
+          location: formData.location,
+          ...(photoFile ? { photoFile } : {})
         });
         toast.success('Hesap oluşturuldu!');
       }
@@ -107,6 +109,15 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
 
           {mode === 'signup' && (
             <>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Profil Fotoğrafı</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setPhotoFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-red-500 focus:outline-none"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   <User className="w-4 h-4 inline mr-2" />
